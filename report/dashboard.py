@@ -271,10 +271,13 @@ def debug_print(message):
     print(message)
     print("*"*50 + "\n")
 
-@app.get('/team/{id:str}')
-def team_view(id):
-    debug_print(f"Team view route: ID = '{id}', Type = {type(id)}")
-    return report(id, Team())
+@app.get('/team/{id}')
+def team_view(id: str = "1"):
+    debug_print(f"Team view route: ID = {id}")
+    try:
+        return report (int(id), Team())
+    except ValueError:
+        return report(1, Team())
 
 # Create a route for a get request
 # Set the route's path to the root
@@ -295,16 +298,14 @@ def index():
 # an ID of `2`. 
 # parameterize the employee ID 
 # to a string datatype
-@app.get('/employee/{id:str}')
-def employee_view(id=None):
 
-    if id is None:
-        id_int = 1
-    else:
-        try:
-            id_int = int(id)
-        except (ValueError, TypeError):
-            id_int = 1
+@app.get('/employee/{id}')
+def employee_view(id: str = "1"):
+    debug_print(f"Employee view called with ID: {id}")
+    try:
+        return report(int(id), Employee())
+    except ValueError:
+        return report(1, Employee())
 
     # Call the initialized report
     # pass the ID and an instance
@@ -319,20 +320,6 @@ def employee_view(id=None):
 # an ID of `2`. 
 # parameterize the team ID 
 # to a string datatype
-@app.get('/team/{id:str}')
-def team_view(id=None):
-    print(f"Team view route called with ID: {id}")
-
-    if id is None:
-        id_int = 1
-        print(f"ID was None, using default: {id_int}")
-    else:
-        try:
-            id_int = int(id)
-            print(f"Converted to int: {id_int}")
-        except (ValueError, TypeError):
-            id_int = 1
-            print(f"Error converting ID, using default: {id_int}")
     
 
     # Call the initialized report
