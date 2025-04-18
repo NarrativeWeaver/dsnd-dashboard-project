@@ -10,7 +10,7 @@ class Team(QueryBase):
 
     # Set the class attribute `name`
     # to the string "team"
-   name = "team"
+    name = "team"
 
 
     # Define a `names` method
@@ -36,7 +36,7 @@ class Team(QueryBase):
     # that receives an ID argument
     # This method should return
     # a list of tuples from an sql execution
-     @query
+    @query
     def username(self, id):
 
         # Query 6
@@ -45,7 +45,7 @@ class Team(QueryBase):
         # Use f-string formatting and a WHERE filter
         # to only return the team name related to
         # the ID argument
-       return f"""
+        return f"""
             SELECT team_name
             FROM {self.name}
             WHERE {self.name}_id = {id}
@@ -59,8 +59,14 @@ class Team(QueryBase):
     # so when it is called, a pandas dataframe
     # is returns containing the execution of
     # the sql query
-    #### YOUR CODE HERE
+   
     def model_data(self, id):
+
+        if id is None or not isinstance(id, (int, str)):
+         id = 1
+
+        print(f"Getting model data for team ID: {id}")
+
         sql_query = f"""
             SELECT positive_events, negative_events FROM (
                     SELECT employee_id
@@ -74,3 +80,5 @@ class Team(QueryBase):
                    )
                 """
         return self.pandas_query(sql_query)
+        print(f"Results for team {id}: {result.shape[0]} rows")
+        return result

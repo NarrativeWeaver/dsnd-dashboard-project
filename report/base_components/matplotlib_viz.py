@@ -59,7 +59,4 @@ class MatplotlibViz(BaseComponent):
         for spine in ax.spines.values():
             spine.set_edgecolor(bordercolor)
 
-        for line in ax.get_lines():
-            line.set_linewidth(4)
-            line.set_linestyle('dashdot')
-
+    

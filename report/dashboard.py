@@ -1,5 +1,6 @@
-from fasthtml.common import *
+from fasthtml.common import H1, Div, fast_app, serve
 import matplotlib.pyplot as plt
+import pandas as pd
 
 # Import QueryBase, Employee, Team from employee_events
 from employee_events import QueryBase, Employee, Team
@@ -63,7 +64,8 @@ class Header(BaseComponent):
         # Using the model argument for this method
         # return a fasthtml H1 objects
         # containing the model's name attribute
-        return H1(f"{model.name.capitalize()} Performance")
+        return H1(model.name)
+
           
 
 # Create a subclass of base_components/MatplotlibViz
@@ -73,6 +75,8 @@ class LineChart(MatplotlibViz):
     # Overwrite the parent class's `visualization`
     # method. Use the same parameters as the parent
     def visualization(self, entity_id, model):
+
+        print(f"LineChart for {model.name} ID: {entity_id}")
     
 
         # Pass the `asset_id` argument to
@@ -88,7 +92,7 @@ class LineChart(MatplotlibViz):
         df = df.set_index('event_date')
         
         # Sort the index
-       df = df.sort_index()
+        df = df.sort_index()
         
         # Use the .cumsum method to change the data
         # in the dataframe to cumulative counts
@@ -115,13 +119,12 @@ class LineChart(MatplotlibViz):
         # the border color and font color to black. 
         # Reference the base_components/matplotlib_viz file 
         # to inspect the supported keyword arguments
-       self.set_axis_styling(ax, border_color="black", font_color="black")
+        self.set_axis_styling(ax, bordercolor="black", fontcolor="black")
         
         # Set title and labels for x and y axis
-         ax.set_title('Cumulative Events Over Time', fontsize=20)
+        ax.set_title('Cumulative Events Over Time', fontsize=20)
         ax.set_xlabel('Date')
         ax.set_ylabel('Event Count')
-        
         return fig
 
 
@@ -143,15 +146,22 @@ class BarChart(MatplotlibViz):
         # pass the `asset_id` to the `.model_data` method
         # to receive the data that can be passed to the machine
         # learning model
-       data = model.model_data(entity_id)
-        
+        data = model.model_data(entity_id)
+
+
         # Using the predictor class attribute
         # pass the data to the `predict_proba` method
-         proba = self.predictor.predict_proba(data)
+        if data is None or data.empty:
+            pred = 0.0
+        else:
+            proba = self.predictor.predict_proba(data)
         
         # Index the second column of predict_proba output
         # The shape should be (<number of records>, 1)
-       proba = proba[:, 1]
+        if proba is None or proba.size == 0:
+            pred = 0.0
+        else:
+            recruitment_proba = proba[:, 1].reshape(-1,1)
         
         
         # Below, create a `pred` variable set to
@@ -160,14 +170,15 @@ class BarChart(MatplotlibViz):
         # If the model's name attribute is "team"
         # We want to visualize the mean of the predict_proba output
         if model.name == "team":
-            pred = proba.mean()
-       
-            
+            pred = recruitment_proba.mean()
+
         # Otherwise set `pred` to the first value
         # of the predict_proba output
         else:
-            pred = proba[0]
-        
+            pred = recruitment_proba[0] if len(recruitment_proba) > 0 else 0.0
+
+        pred = float(pred)
+           
         # Initialize a matplotlib subplot
         fig, ax = plt.subplots(figsize=(10, 6))
         
@@ -179,8 +190,7 @@ class BarChart(MatplotlibViz):
         # pass the axis variable
         # to the `.set_axis_styling`
         # method
-        self.set_axis_styling(ax, border_color="black", font_color="black")
-        
+        self.set_axis_styling(ax, bordercolor="black", fontcolor="black")
         return fig
  
 # Create a subclass of combined_components/CombinedComponent
@@ -202,20 +212,17 @@ class Visualizations(CombinedComponent):
 # Create a subclass of base_components/DataTable
 # called `NotesTable`
 class NotesTable(DataTable):
+    def __init__(self, title=None, **kwargs):
+        super().__init__(**kwargs)
+        self.title = title
 
     # Overwrite the `component_data` method
     # using the same parameters as the parent class
     def component_data(self, entity_id, model):
-        
         # Using the model and entity_id arguments
         # pass the entity_id to the model's .notes 
         # method. Return the output
         return model.notes(entity_id)
-        
-        # Using the model and entity_id arguments
-        # pass the entity_id to the model's .notes 
-        # method. Return the output
-       return model.notes(entity_id)
     
 
 class DashboardFilters(FormGroup):
@@ -253,13 +260,25 @@ class Report(CombinedComponent):
     ]
 
 # Initialize a fasthtml app 
-app = Application()
+app, route = fast_app()
 
 # Initialize the `Report` class
 report = Report()
 
+#Debug function
+def debug_print(message):
+    print("\n" + "*"*50)
+    print(message)
+    print("*"*50 + "\n")
+
+@app.get('/team/{id:str}')
+def team_view(id):
+    debug_print(f"Team view route: ID = '{id}', Type = {type(id)}")
+    return report(id, Team())
+
 # Create a route for a get request
 # Set the route's path to the root
+
 @app.get('/')
 def index():
 
@@ -277,13 +296,21 @@ def index():
 # parameterize the employee ID 
 # to a string datatype
 @app.get('/employee/{id:str}')
-def employee_view(id):
+def employee_view(id=None):
+
+    if id is None:
+        id_int = 1
+    else:
+        try:
+            id_int = int(id)
+        except (ValueError, TypeError):
+            id_int = 1
 
     # Call the initialized report
     # pass the ID and an instance
     # of the Employee SQL class as arguments
     # Return the result
-    return report(id, Employee())
+    return report(id_int, Employee())
 
 # Create a route for a get request
 # Set the route's path to receive a request
@@ -293,13 +320,26 @@ def employee_view(id):
 # parameterize the team ID 
 # to a string datatype
 @app.get('/team/{id:str}')
-def team_view(id):
+def team_view(id=None):
+    print(f"Team view route called with ID: {id}")
+
+    if id is None:
+        id_int = 1
+        print(f"ID was None, using default: {id_int}")
+    else:
+        try:
+            id_int = int(id)
+            print(f"Converted to int: {id_int}")
+        except (ValueError, TypeError):
+            id_int = 1
+            print(f"Error converting ID, using default: {id_int}")
+    
 
     # Call the initialized report
     # pass the id and an instance
     # of the Team SQL class as arguments
     # Return the result
-    return report(id, Team())
+    return report(id_int, Team())
 
 
 # Keep the below code unchanged!

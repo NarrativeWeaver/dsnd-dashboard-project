@@ -22,6 +22,8 @@ class QueryBase(QueryMixin):
     # that receives an `id` argument
     # This method should return a pandas dataframe
     def event_counts(self, id):
+        if id is None or not isinstance(id, (int,str)):
+            id = 1
 
         # QUERY 1
         # Write an SQL query that groups by `event_date`
@@ -51,6 +53,9 @@ class QueryBase(QueryMixin):
     # This function should return a pandas dataframe
     def notes(self, id):
 
+        if id is None or not isinstance(id, (int, str)):
+            id = 1
+
 
         # QUERY 2
         # Write an SQL query that returns `note_date`, and `note`
@@ -69,3 +74,4 @@ class QueryBase(QueryMixin):
         """
         
         return self.pandas_query(sql_query)
+

@@ -3,7 +3,7 @@ from .query_base import QueryBase
 
 # Import dependencies needed for sql execution
 # from the `sql_execution` module
-#### YOUR CODE HERE
+from .sql_execution import query
 
 # Define a subclass of QueryBase
 # called Employee
@@ -18,7 +18,7 @@ class Employee(QueryBase):
     # that receives no arguments
     # This method should return a list of tuples
     # from an sql execution
-   @query
+    @query
     def names(self):
         
         # Query 3
@@ -40,7 +40,7 @@ class Employee(QueryBase):
     # that receives an `id` argument
     # This method should return a list of tuples
     # from an sql execution
-     @query
+    @query
     def username(self, id):
         
         # Query 4
@@ -64,6 +64,10 @@ class Employee(QueryBase):
     # is returns containing the execution of
     # the sql query
     def model_data(self, id):
+
+        if id is None or not isinstance(id, (int, str)):
+            id = 1
+
         sql_query = f"""
                     SELECT SUM(positive_events) positive_events
                          , SUM(negative_events) negative_events
